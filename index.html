@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Exchange Tracker</title>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --primary: #2c3e50;
+            --accent: #3498db;
+            --profit: #27ae60;
+            --loss: #e74c3c;
+            --border: #ddd;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            color: var(--primary);
+        }
+        .container {
+            max-width: 1200px;
+            margin: auto;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .summary-cards {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .card {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            flex: 1;
+            min-width: 200px;
+            text-align: center;
+        }
+        .card h3 {
+            margin-top: 0;
+            color: #7f8c8d;
+            font-size: 16px;
+            text-transform: uppercase;
+        }
+        .card .value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .section {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+        }
+        .section h2 {
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        .form-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        input, select, button {
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        input {
+            flex: 1;
+            min-width: 100px;
+        }
+        button {
+            background-color: var(--accent);
+            color: white;
+            cursor: pointer;
+            border: none;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        th {
+            background-color: #ecf0f1;
+        }
+        .profit { color: var(--profit); }
+        .loss { color: var(--loss); }
+        .small-btn {
+            padding: 5px 10px;
+            background-color: #e74c3c;
+            font-size: 12px;
+        }
+        .small-btn:hover { background-color: #c0392b; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>📊 Stock Exchange Tracker</h1>
+    </header>
+
+    <!-- Account Summary -->
+    <div class="summary-cards">
+        <div class="card">
+            <h3>Net Deposited</h3>
+            <div class="value" id="totalDeposited">$0.00</div>
+        </div>
+        <div class="card">
+            <h3>Cash Balance</h3>
+            <div class="value" id="cashBalance">$0.00</div>
+        </div>
+        <div class="card">
+            <h3>Portfolio Market Value</h3>
+            <div class="value" id="portfolioValue">$0.00</div>
+        </div>
+        <div class="card">
+            <h3>Total Account Value</h3>
+            <div class="value" id="totalAccountValue">$0.00</div>
+        </div>
+        <div class="card">
+            <h3>Total Profit / Loss</h3>
+            <div class="value" id="totalPnl">$0.00</div>
+        </div>
+    </div>
+
+    <!-- Deposit / Refund Money -->
+    <div class="section">
+        <h2>1. Deposit / Refund Money</h2>
+        <div class="form-row">
+            <select id="cashType">
+                <option value="deposit">Deposit</option>
+                <option value="refund">Refund</option>
+            </select>
+            <input type="number" id="cashAmount" placeholder="Amount ($)" step="0.01">
+            <input type="date" id="cashDate">
+            <input type="text" id="cashDesc" placeholder="Description (e.g. Bank transfer, Withdrawal)">
+            <button onclick="addCashTransaction()">Add Transaction</button>
+        </div>
+    </div>
+
+    <!-- Buy/Sell Stock -->
+    <div class="section">
+        <h2>2. Buy / Sell Stock</h2>
+        <div class="form-row">
+            <select id="tradeType">
+                <option value="buy">Buy</option>
+                <option value="sell">Sell</option>
+            </select>
+            <input type="text" id="symbol" placeholder="Symbol (e.g. AAPL)" style="text-transform:uppercase">
+            <input type="number" id="quantity" placeholder="Quantity" step="1">
+            <input type="number" id="price" placeholder="Price per share ($)" step="0.01">
+            <input type="number" id="commission" placeholder="Commission ($)" step="0.01" value="0">
+            <input type="date" id="stockDate">
+            <button onclick="addStockTransaction()">Execute Trade</button>
+        </div>
+    </div>
+
+    <!-- Update Market Prices -->
+    <div class="section">
+        <h2>3. Update Market Prices (For Daily P&L)</h2>
+        <div class="form-row">
+            <select id="priceSymbol"></select>
+            <input type="number" id="marketPrice" placeholder="Current Market Price ($)" step="0.01">
+            <button onclick="updateMarketPrice()">Update Price</button>
+        </div>
+    </div>
+
+    <!-- Portfolio Table -->
+    <div class="section">
+        <h2>4. My Portfolio</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Symbol</th>
+                    <th>Total Units</th>
+                    <th>Avg Price / Unit</th>
+                    <th>Purchase Value</th>
+                    <th>Current Market Price</th>
+                    <th>Market Value</th>
+                    <th>Total P&L</th>
+                    <th>Daily Change</th>
+                </tr>
+            </thead>
+            <tbody id="portfolioTable"></tbody>
+        </table>
+    </div>
+
+    <!-- Stock Transaction History -->
+    <div class="section">
+        <h2>5. Stock Transaction History</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Symbol</th>
+                    <th>Qty</th>
+                    <th>Price</th>
+                    <th>Commission</th>
+                    <th>Total Value</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="historyTable"></tbody>
+        </table>
+    </div>
+
+    <!-- Deposit & Refund History -->
+    <div class="section">
+        <h2>6. Deposit & Refund History</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th>Amount</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="cashHistoryTable"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // Data State
+    let state = {
+        cashTransactions: [], // For Deposits and Refunds
+        stockTransactions: [], // For Buys and Sells
+        marketPrices: {}
+    };
+
+    // Load from LocalStorage on startup
+    function loadData() {
+        const saved = localStorage.getItem('stockTrackerDataV2');
+        if (saved) {
+            state = JSON.parse(saved);
+        } else {
+            // Migration from old version if it exists
+            const oldSaved = localStorage.getItem('stockTrackerData');
+            if (oldSaved) {
+                const oldState = JSON.parse(oldSaved);
+                state.stockTransactions = oldState.transactions || [];
+                state.marketPrices = oldState.marketPrices || {};
+                if (oldState.totalDeposited > 0) {
+                    state.cashTransactions.push({
+                        id: Date.now(),
+                        type: 'deposit',
+                        amount: oldState.totalDeposited,
+                        date: new Date().toISOString().split('T')[0],
+                        desc: 'Migrated previous balance'
+                    });
+                }
+            }
+        }
+        
+        document.getElementById('cashDate').valueAsDate = new Date();
+        document.getElementById('stockDate').valueAsDate = new Date();
+        renderAll();
+    }
+
+    function saveData() {
+        localStorage.setItem('stockTrackerDataV2', JSON.stringify(state));
+    }
+
+    // Calculate current cash balance dynamically
+    function calculateCashBalance() {
+        let balance = 0;
+        state.cashTransactions.forEach(t => {
+            if (t.type === 'deposit') balance += t.amount;
+            else if (t.type === 'refund') balance -= t.amount;
+        });
+        state.stockTransactions.forEach(t => {
+            const totalTradeCost = (t.qty * t.price) + (t.type === 'buy' ? t.commission : -t.commission);
+            if (t.type === 'buy') balance -= totalTradeCost;
+            else balance += totalTradeCost;
+        });
+        return balance;
+    }
+
+    // Calculate net deposited amount dynamically
+    function calculateNetDeposited() {
+        let total = 0;
+        state.cashTransactions.forEach(t => {
+            if (t.type === 'deposit') total += t.amount;
+            else if (t.type === 'refund') total -= t.amount;
+        });
+        return total;
+    }
+
+    // 1. Add Deposit/Refund
+    function addCashTransaction() {
+        const type = document.getElementById('cashType').value;
+        const amount = parseFloat(document.getElementById('cashAmount').value);
+        const date = document.getElementById('cashDate').value;
+        const desc = document.getElementById('cashDesc').value;
+
+        if (isNaN(amount) || amount <= 0 || !date) {
+            alert("Please enter a valid amount and date.");
+            return;
+        }
+
+        if (type === 'refund' && amount > calculateCashBalance()) {
+            alert("Insufficient cash balance for this refund.");
+            return;
+        }
+
+        state.cashTransactions.push({ 
+            id: Date.now(), 
+            type, 
+            amount, 
+            date, 
+            desc: desc || (type === 'deposit' ? 'Account Deposit' : 'Account Refund') 
+        });
+
+        saveData();
+        renderAll();
+        
+        document.getElementById('cashAmount').value = '';
+        document.getElementById('cashDesc').value = '';
+    }
+
+    // Delete Cash Transaction
+    function deleteCashTransaction(id) {
+        if(!confirm("Delete this cash transaction? Your balance will be recalculated.")) return;
+        state.cashTransactions = state.cashTransactions.filter(t => t.id !== id);
+        saveData();
+        renderAll();
+    }
+
+    // 2. Add Buy/Sell Stock Transaction
+    function addStockTransaction() {
+        const type = document.getElementById('tradeType').value;
+        let symbol = document.getElementById('symbol').value.toUpperCase();
+        const qty = parseInt(document.getElementById('quantity').value);
+        const price = parseFloat(document.getElementById('price').value);
+        const commission = parseFloat(document.getElementById('commission').value) || 0;
+        const date = document.getElementById('stockDate').value;
+
+        if (!symbol || isNaN(qty) || qty <= 0 || isNaN(price) || price <= 0 || !date) {
+            alert("Please fill all stock fields correctly.");
+            return;
+        }
+
+        const totalTradeCost = (qty * price) + (type === 'buy' ? commission : -commission);
+
+        if (type === 'buy' && totalTradeCost > calculateCashBalance()) {
+            alert("Insufficient cash balance for this purchase.");
+            return;
+        }
+
+        // Check if selling more than owned
+        let currentlyOwned = 0;
+        state.stockTransactions.forEach(t => {
+            if (t.symbol === symbol) {
+                currentlyOwned += (t.type === 'buy' ? t.qty : -t.qty);
+            }
+        });
+        if (type === 'sell' && qty > currentlyOwned) {
+            alert(`You only own ${currentlyOwned} units of ${symbol}.`);
+            return;
+        }
+
+        state.stockTransactions.push({ id: Date.now(), type, symbol, qty, price, commission, date });
+        saveData();
+        renderAll();
+        
+        // Clear inputs
+        document.getElementById('symbol').value = '';
+        document.getElementById('quantity').value = '';
+        document.getElementById('price').value = '';
+        document.getElementById('commission').value = '0';
+    }
+
+    // Delete Stock Transaction
+    function deleteStockTransaction(id) {
+        if(!confirm("Delete this stock transaction? Your balance will be recalculated.")) return;
+        state.stockTransactions = state.stockTransactions.filter(t => t.id !== id);
+        saveData();
+        renderAll();
+    }
+
+    // 3. Update Market Price
+    function updateMarketPrice() {
+        const symbol = document.getElementById('priceSymbol').value;
+        const price = parseFloat(document.getElementById('marketPrice').value);
+        if (!symbol || isNaN(price) || price <= 0) {
+            alert("Select a stock and enter a valid price.");
+            return;
+        }
+        state.marketPrices[symbol] = price;
+        saveData();
+        renderAll();
+        document.getElementById('marketPrice').value = '';
+    }
+
+    // Calculate Portfolio aggregations
+    function getPortfolio() {
+        let portfolio = {};
+        
+        state.stockTransactions.forEach(t => {
+            if (!portfolio[t.symbol]) {
+                portfolio[t.symbol] = { units: 0, totalCost: 0 };
+            }
+            if (t.type === 'buy') {
+                portfolio[t.symbol].units += t.qty;
+                portfolio[t.symbol].totalCost += (t.qty * t.price) + t.commission;
+            } else {
+                // Selling
+                let avgCost = portfolio[t.symbol].totalCost / portfolio[t.symbol].units;
+                portfolio[t.symbol].units -= t.qty;
+                portfolio[t.symbol].totalCost -= (avgCost * t.qty);
+            }
+        });
+
+        return portfolio;
+    }
+
+    // Render UI
+    function renderAll() {
+        const netDeposited = calculateNetDeposited();
+        const cashBalance = calculateCashBalance();
+
+        // Render Summary
+        document.getElementById('totalDeposited').textContent = `$${netDeposited.toFixed(2)}`;
+        document.getElementById('cashBalance').textContent = `$${cashBalance.toFixed(2)}`;
+
+        const portfolio = getPortfolio();
+        let portfolioMarketValue = 0;
+        let totalPurchaseValue = 0;
+
+        // Populate Symbol Dropdown for Price Update
+        const symbols = Object.keys(portfolio).filter(s => portfolio[s].units > 0);
+        const dropdown = document.getElementById('priceSymbol');
+        dropdown.innerHTML = symbols.length > 0 ? 
+            symbols.map(s => `<option value="${s}">${s}</option>`).join('') : 
+            `<option value="">No stocks owned</option>`;
+
+        // Render Portfolio Table
+        const portTable = document.getElementById('portfolioTable');
+        portTable.innerHTML = '';
+        
+        symbols.forEach(symbol => {
+            const data = portfolio[symbol];
+            if (data.units > 0) {
+                const avgPrice = data.totalCost / data.units;
+                const currentPrice = state.marketPrices[symbol] || avgPrice; // Default to avg price if not updated
+                const marketValue = data.units * currentPrice;
+                const pnl = marketValue - data.totalCost;
+                const dailyChange = ((currentPrice - avgPrice) / avgPrice * 100).toFixed(2);
+
+                portfolioMarketValue += marketValue;
+                totalPurchaseValue += data.totalCost;
+
+                portTable.innerHTML += `
+                    <tr>
+                        <td><strong>${symbol}</strong></td>
+                        <td>${data.units}</td>
+                        <td>$${avgPrice.toFixed(2)}</td>
+                        <td>$${data.totalCost.toFixed(2)}</td>
+                        <td>$${currentPrice.toFixed(2)}</td>
+                        <td>$${marketValue.toFixed(2)}</td>
+                        <td class="${pnl >= 0 ? 'profit' : 'loss'}">$${pnl.toFixed(2)} (${dailyChange}%)</td>
+                        <td class="${dailyChange >= 0 ? 'profit' : 'loss'}">${dailyChange}%</td>
+                    </tr>
+                `;
+            }
+        });
+
+        document.getElementById('portfolioValue').textContent = `$${portfolioMarketValue.toFixed(2)}`;
+        document.getElementById('totalAccountValue').textContent = `$${(cashBalance + portfolioMarketValue).toFixed(2)}`;
+        
+        const totalPnl = (cashBalance + portfolioMarketValue) - netDeposited;
+        const pnlElement = document.getElementById('totalPnl');
+        pnlElement.textContent = `$${totalPnl.toFixed(2)}`;
+        pnlElement.className = `value ${totalPnl >= 0 ? 'profit' : 'loss'}`;
+
+        // Render Stock History Table
+        const histTable = document.getElementById('historyTable');
+        histTable.innerHTML = '';
+        [...state.stockTransactions].reverse().forEach(t => {
+            const totalValue = (t.qty * t.price) + t.commission;
+            histTable.innerHTML += `
+                <tr>
+                    <td>${t.date}</td>
+                    <td style="color: ${t.type === 'buy' ? '#e74c3c' : '#27ae60'}">${t.type.toUpperCase()}</td>
+                    <td><strong>${t.symbol}</strong></td>
+                    <td>${t.qty}</td>
+                    <td>$${t.price.toFixed(2)}</td>
+                    <td>$${t.commission.toFixed(2)}</td>
+                    <td>$${totalValue.toFixed(2)}</td>
+                    <td><button class="small-btn" onclick="deleteStockTransaction(${t.id})">Delete</button></td>
+                </tr>
+            `;
+        });
+
+        // Render Cash History Table
+        const cashHistTable = document.getElementById('cashHistoryTable');
+        cashHistTable.innerHTML = '';
+        [...state.cashTransactions].reverse().forEach(t => {
+            cashHistTable.innerHTML += `
+                <tr>
+                    <td>${t.date}</td>
+                    <td style="color: ${t.type === 'deposit' ? '#27ae60' : '#e74c3c'}">${t.type.toUpperCase()}</td>
+                    <td>${t.desc}</td>
+                    <td class="${t.type === 'deposit' ? 'profit' : 'loss'}">${t.type === 'deposit' ? '+' : '-'}$${t.amount.toFixed(2)}</td>
+                    <td><button class="small-btn" onclick="deleteCashTransaction(${t.id})">Delete</button></td>
+                </tr>
+            `;
+        });
+    }
+
+    // Initialize app
+    loadData();
+</script>
+
+</body>
+</html>
